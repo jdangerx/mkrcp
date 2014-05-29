@@ -100,6 +100,7 @@ def main():
 
     import pdb; pdb.set_trace()
 
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -108,5 +109,7 @@ if __name__ == "__main__":
     if args.clean and os.path.isfile(db_path):
         os.remove(db_path)
 
-    main()
+    if args.clean and os.path.isfile(ings_path):
+        os.remove(ings_path)
 
+    main()
