@@ -84,6 +84,21 @@ def count_ingredients(db):
 #         ingredients[ing]=amt
 #     return ingredients
 
+def main():
+    if os.path.isfile(ings_path):
+        with open(ings_path, "rb") as ings_file:
+            ings = json.loads(ings_file.read())
+    else:
+        db = setup()
+        db = [extract_ingredient(recipe["ingredients"]) for recipe in db]
+        db_dict, ing_ctr = count_ingredients(db)
+        most_common_ingredients = [_[0] for _ in ing_ctr.most_common(200)]
+        most_common_pairings = [dict(db_dict[ing].most_common(50)) for ing in most_common_ingredients]
+        ings = dict(zip(most_common_ingredients, most_common_pairings))
+        with open(ings_path, "wb") as ings_file:
+            json.dump(ings, ings_file)
+
+    import pdb; pdb.set_trace()
 
 if __name__ == "__main__":
     import argparse
@@ -93,16 +108,5 @@ if __name__ == "__main__":
     if args.clean and os.path.isfile(db_path):
         os.remove(db_path)
 
-    if os.path.isfile(ings_path):
-        with open(ings_path, "rb") as ings_file:
-            ings = json.loads(ings_file.read())
-    else:
-        db = setup()
-        db = [extract_ingredient(recipe["ingredients"]) for recipe in db]
-        db_dict, ing_ctr = count_ingredients(db)
-        most_common_ingredients = ing_ctr.most_common(100)
-        most_common_pairings = [dict(db_dict[ing[0]].most_common(25)) for ing in most_common_ingredients]
-        ings = dict(zip(most_common_ingredients, most_common_pairings))
-        with open(ings_path, "wb") as ings_file:
-            json.dump(ings, ings_file)
-    print ings["olive oil"]
+    main()
+
