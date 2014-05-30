@@ -193,7 +193,7 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--normal", action="store_true", default=False,
                         help="Tries to make probable recipes instead of improbable ones.")
     parser.add_argument("outfile", nargs="?", default=sys.stdout, type=argparse.FileType("w"),
-                        help="File to output recipes to.")
+                        help="File to output recipes to. If none given, prints to stdout.")
     parser.add_argument("-N", "--number", type=int, default=10,
                         help="Number of recipes to generate.")
     args = parser.parse_args()

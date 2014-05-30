@@ -1,5 +1,5 @@
-food-o-matic
-============
+mkrcp
+=====
 
 Uses the [Open Recipes](https://github.com/fictivekin/openrecipes)
 database to generate "recipes". They are actually just lists of
@@ -12,7 +12,7 @@ Usage:
 foodomatic.py [-h] [-c] [-g GENRE] [-n] [-N NUMBER] [outfile]
 
 positional arguments:
-  outfile               File to output recipes to.
+  outfile               File to output recipes to. If none given, prints to stdout.
 
 optional arguments:
   -h, --help            show this help message and exit
