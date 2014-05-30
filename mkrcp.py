@@ -25,8 +25,8 @@ measure_words = ["gallon", "gal", "quart", "q", "cup", "tablespoon",
 RE_AMOUNT = re.compile(r"\d+g|([\d\xbc-\xbe/]+ )+"+"s?|([\d\xbc-\xbe]+ )+".join(measure_words), flags=re.I|re.U)
 
 def setup():
-    if not os.path.isfile(db_path):
-        print("No database found at {}. Building...".format(db_path))
+    if not os.path.isfile(ings_path):
+        print("No database found at {}. Building...".format(ings_path))
 
         try:
             recipes = gzip.open(recipe_path, "rb")
