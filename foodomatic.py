@@ -189,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--clean", action="store_true", default=False,
                         help="Removes any existing refined recipe data.")
     parser.add_argument("-g", "--genre", default="entrees",
-                        help="Currently only accepts 'drinks' and 'entrees'.")
+                        help="Currently only accepts 'drinks' and 'entrees'. Defaults to 'entrees'.")
     parser.add_argument("-n", "--normal", action="store_true", default=False,
                         help="Tries to make probable recipes instead of improbable ones.")
     parser.add_argument("outfile", nargs="?", default=sys.stdout, type=argparse.FileType("w"),
