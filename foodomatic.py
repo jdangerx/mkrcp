@@ -19,9 +19,9 @@ measure_words = ["gallon", "gal", "quart", "q", "cup", "tablespoon",
                  "pinch", "pinches", "pound", "ounce", "ounces", "oz",
                  "fl oz", "fl. oz", "clove", "whole", "box", "boxes",
                  "package", "stick", "weight", "fluid", "\d+", "oz.",
-                 "jar", "can"]
+                 "jar", "can", "slice", "slices", "tbs.", "pint"]
 
-RE_AMOUNT = re.compile(r"(\d+g|[\d\xbc-\xbe]+ "+"s?|[\d\xbc-\xbe]+ ".join(measure_words)+")+", flags=re.I|re.U)
+RE_AMOUNT = re.compile(r"\d+g|([\d\xbc-\xbe/]+ )+"+"s?|([\d\xbc-\xbe]+ )+".join(measure_words), flags=re.I|re.U)
 # RE_INVALID_ING = re.compile("|".join(measure_words), flags=re.I|re.U)
 
 def setup():
@@ -81,17 +81,29 @@ def main():
         # ing1 = "chicken breasts"
         ing2 = random.choice(ings.keys())
         recipe = link_ingredients(ing1, ing2, ings)
-        print(string.capwords("{} with {}\n".format(ing1, ing2)))
+        print(string.capwords(u"{} with {}\n".format(ing1, ing2)))
         if recipe:
-            print("Commonness: {0:.2f}".format(recipe[0]*100))
-            print("Recipe:\n- "+u"\n- ".join(recipe[1]))
+            print(u"Commonness Index: {0:.2f}".format(recipe[0]*1000))
+            try:
+                print(u"Recipe:\n- "+u"\n- ".join(recipe[1]))
+            except UnicodeDecodeError:
+                print("Unicode is the way of the devil!")
         else:
-            print("No path can guide the wicked.")
+            print("Recipe:\nNo path can guide the wicked.")
         print("\n"+"="*80+"\n")
 
 
 def extract_ingredient(ing_list):
-    return [re.sub(RE_AMOUNT, "", ing_str).strip("123/, ().-").lower() for ing_str in ing_list]
+    new_ing_list = []
+    for ing in ing_list:
+        new_ing = re.sub(RE_AMOUNT, "", ing)
+        new_ing = re.sub(r"[:%\d/,()\. -]+", lambda x: " ", new_ing)
+        # new_ing = re.sub(r" +", lambda x: " ", new_ing)
+        new_ing = new_ing.strip()
+        new_ing = new_ing.lower()
+        new_ing_list.append(new_ing)
+    return new_ing_list
+    # return [re.sub(RE_AMOUNT, "", ing_str).strip("123/, ().").lower() for ing_str in ing_list]
 
 def count_ingredients(db):
     ing_ctr = Counter()
@@ -148,7 +160,7 @@ def link_ingredients(source, end, ings):
             try:
                 ing_size = len(ings[test_ing].keys())
                 ing_sorted = sorted(ings[test_ing].keys(), key=ings[test_ing].get)
-                possible_ings = ing_sorted[:int(ing_size/4)]
+                possible_ings = ing_sorted[:int(ing_size/8)]
                 for ing in possible_ings:
                     if ing == test_ing:
                         continue
