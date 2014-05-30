@@ -4,7 +4,10 @@ import os
 import sys
 import urllib
 import gzip
-from collections import Counter
+import pdb
+import random
+import string
+from collections import Counter, deque
 
 db_path = "data/slim_recipes.json"
 recipe_path = "data/recipes.json.gz"
@@ -15,9 +18,10 @@ measure_words = ["gallon", "gal", "quart", "q", "cup", "tablespoon",
                  "tbsp", "teaspoon", "tsp", "ml", "dash", "dashes",
                  "pinch", "pinches", "pound", "ounce", "ounces", "oz",
                  "fl oz", "fl. oz", "clove", "whole", "box", "boxes",
-                 "package", "stick", "weight", "fluid", "\d+", ""]
+                 "package", "stick", "weight", "fluid", "\d+", "oz.",
+                 "jar", "can"]
 
-RE_AMOUNT = re.compile(r"[\d\xbc-\xbe]+ "+"s?|[\d\xbc-\xbe]+ ".join(measure_words), flags=re.I|re.U)
+RE_AMOUNT = re.compile(r"(\d+g|[\d\xbc-\xbe]+ "+"s?|[\d\xbc-\xbe]+ ".join(measure_words)+")+", flags=re.I|re.U)
 # RE_INVALID_ING = re.compile("|".join(measure_words), flags=re.I|re.U)
 
 def setup():
@@ -40,7 +44,6 @@ def setup():
         finally:
             lines = recipes.readlines()
             recipe_list = (json.loads(line) for line in lines)
-            # import pdb; pdb.set_trace()
             db = [{"ingredients": recipe["ingredients"].split("\n"),
                    "yield": recipe.get("recipeYield")} for recipe in recipe_list]
         with open(db_path, "wb") as db_file:
@@ -51,15 +54,44 @@ def setup():
 
     return db
 
+def main():
+    if os.path.isfile(ings_path):
+        with open(ings_path, "rb") as ings_file:
+            ings = json.loads(ings_file.read())
+    else:
+        db = setup()
+        db = [extract_ingredient(recipe["ingredients"]) for recipe in db]
+        db_dict, ing_ctr = count_ingredients(db)
+        most_common_ingredients = [_[0] for _ in ing_ctr.most_common(1000)]
+        most_common_pairings = [dict(db_dict[ing].most_common(100)) for ing in most_common_ingredients]
+        ings = dict(zip(most_common_ingredients, most_common_pairings))
+        with open(ings_path, "wb") as ings_file:
+            json.dump(ings, ings_file)
+
+
+    main_ingredients = ["potatoes", "chicken breasts", "chicken thighs", "ground beef", "pork chops",
+                        "uncooked white rice", "basmati rice", "quinoa"]
+
+    with open("ing_list", "w") as f:
+        f.write("\n".join(sorted(ings.keys())).encode("utf-8"))
+
+    for i in range(20):
+        ing1 = random.choice(main_ingredients)
+
+        # ing1 = "chicken breasts"
+        ing2 = random.choice(ings.keys())
+        recipe = link_ingredients(ing1, ing2, ings)
+        print(string.capwords("{} with {}\n".format(ing1, ing2)))
+        if recipe:
+            print("Commonness: {0:.2f}".format(recipe[0]*100))
+            print("Recipe:\n- "+u"\n- ".join(recipe[1]))
+        else:
+            print("No path can guide the wicked.")
+        print("\n"+"="*80+"\n")
+
+
 def extract_ingredient(ing_list):
-    # ings = []
-    # for ing_str in ing_list:
-        # ing = re.sub(RE_AMOUNT, "", ing_str).strip("1/, ")
-        # if re.search(RE_INVALID_ING, ing):
-            # continue
-        # ings.append(ing)
-    return [re.sub(RE_AMOUNT, "", ing_str).strip("1/, ") for ing_str in ing_list]
-    # return ings
+    return [re.sub(RE_AMOUNT, "", ing_str).strip("123/, ().-").lower() for ing_str in ing_list]
 
 def count_ingredients(db):
     ing_ctr = Counter()
@@ -70,35 +102,74 @@ def count_ingredients(db):
             if ing not in ing_dict:
                 ing_dict[ing] = Counter()
             for other_ing in ing_list:
-                if other_ing == ing:
-                    continue
                 ing_dict[ing][other_ing] += 1
     return ing_dict, ing_ctr
 
+def make_recipes_n_prob(n, num_ingredients, num_recipes, ings):
+    recipes = []
+    for i in range(num_recipes):
+        recipe = [random.choice(ings.keys())]
+        while len(recipe) < num_ingredients:
+            recipe = n_probable(n, recipe, ings)
+        recipes.append(recipe)
+    return recipes
 
-# def extract_ingredient_amount(ing_list):
-#     ingredients = {}
-#     for ing_str in ing_list:
-#         ing = re.sub(RE_AMOUNT, "", ing_str)
-#         amt = re.search(RE_AMOUNT, ing_str).group(0)
-#         ingredients[ing]=amt
-#     return ingredients
 
-def main():
-    if os.path.isfile(ings_path):
-        with open(ings_path, "rb") as ings_file:
-            ings = json.loads(ings_file.read())
+def n_probable(n, recipe, ings):
+    seed_dict = None
+    while seed_dict == None:
+        seed = random.choice(recipe)
+        seed_dict = ings.get(seed)
+    seed_dict.pop(seed, None)
+    seed_sorted = sorted(seed_dict, key=seed_dict.get, reverse=True)
+    max_size = seed_dict[seed_sorted[0]]
+    possible_ings = []
+    additional_ings = set()
+    while len(possible_ings) < n:
+        rand = random.randint(1, max_size)
+        possible_ings = {_ for _ in ings[seed].keys() if rand > ings[seed][_]} - set(recipe)
+    for i in range(n):
+        rand_choice = random.choice(list(possible_ings))
+        additional_ings.add(rand_choice)
+        possible_ings.remove(rand_choice)
+    return recipe+list(additional_ings)
+
+def link_ingredients(source, end, ings):
+    queue = deque([(source, [])])
+    visited = Counter({source: len(ings[source].keys())})
+    paths = []
+    while len(queue) > 0:
+        test_ing, test_path = queue.popleft()
+        new_test_path = test_path + [test_ing]
+        if test_ing == end:
+            if len(new_test_path) > 3:
+                paths.append((get_average_weight(new_test_path, ings), new_test_path))
+        else:
+            try:
+                ing_size = len(ings[test_ing].keys())
+                ing_sorted = sorted(ings[test_ing].keys(), key=ings[test_ing].get)
+                possible_ings = ing_sorted[:int(ing_size/4)]
+                for ing in possible_ings:
+                    if ing == test_ing:
+                        continue
+                    if visited[ing] < 1:
+                        queue.append((ing, new_test_path))
+            except KeyError:
+                continue
+        visited[test_ing] += 1
+    if paths != []:
+        return sorted(paths)[0]
     else:
-        db = setup()
-        db = [extract_ingredient(recipe["ingredients"]) for recipe in db]
-        db_dict, ing_ctr = count_ingredients(db)
-        most_common_ingredients = [_[0] for _ in ing_ctr.most_common(200)]
-        most_common_pairings = [dict(db_dict[ing].most_common(50)) for ing in most_common_ingredients]
-        ings = dict(zip(most_common_ingredients, most_common_pairings))
-        with open(ings_path, "wb") as ings_file:
-            json.dump(ings, ings_file)
+        return None
 
-    import pdb; pdb.set_trace()
+def get_average_weight(ing_list, ings):
+    edges = zip(ing_list[:-1], ing_list[1:])
+    sum = 0
+    for e in edges:
+        size = float(ings[e[0]][e[0]])
+        weight = float(ings[e[0]][e[1]])
+        sum += weight/size
+    return sum/len(edges)
 
 
 if __name__ == "__main__":
