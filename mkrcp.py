@@ -82,13 +82,13 @@ def main(args):
         ing1 = random.choice(food_type[args.genre])
         ing2 = random.choice(ings.keys())
         recipe = link_ingredients(ing1, ing2, ings, args)
-        args.outfile.write(string.capwords(u"{} with {}\n".format(ing1, ing2)))
+        args.outfile.write(string.capwords(u"{} with {}\n".format(ing1, ing2)).encode("utf-8"))
         if recipe:
-            args.outfile.write(u"\nCommonness Index: {0:.2f}".format(recipe[0]*1000))
+            args.outfile.write(u"\nCommonness Index: {0:.2f}".format(recipe[0]*1000).encode("utf-8"))
             try:
-                args.outfile.write(u"\nRecipe:\n- "+u"\n- ".join(recipe[1]))
+                args.outfile.write(u"\nRecipe:\n- "+u"\n- ".join(recipe[1]).encode("utf-8"))
             except UnicodeDecodeError:
-                args.outfile.write("Unicode is the way of the devil!")
+                args.outfile.write("\nUnicode is the way of the devil!")
         else:
             args.outfile.write("\nRecipe:\nNo path can guide the wicked.")
         args.outfile.write("\n"+"="*80+"\n")
