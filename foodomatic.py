@@ -76,23 +76,23 @@ def main(args):
 
     food_type = {"drinks": drinks, "entrees": entrees}
 
-    # for i in range(20):
-    while True:
+    from time import sleep
+    for i in range(args.number):
         ing1 = random.choice(food_type[args.genre])
         ing2 = random.choice(ings.keys())
         recipe = link_ingredients(ing1, ing2, ings, args)
-        print(string.capwords(u"{} with {}\n".format(ing1, ing2)))
+        args.outfile.write(string.capwords(u"{} with {}\n".format(ing1, ing2)))
         if recipe:
-            print(u"Commonness Index: {0:.2f}".format(recipe[0]*1000))
+            args.outfile.write(u"\nCommonness Index: {0:.2f}".format(recipe[0]*1000))
             try:
-                print(u"Recipe:\n- "+u"\n- ".join(recipe[1]))
+                args.outfile.write(u"\nRecipe:\n- "+u"\n- ".join(recipe[1]))
             except UnicodeDecodeError:
-                print("Unicode is the way of the devil!")
+                args.outfile.write("Unicode is the way of the devil!")
         else:
-            print("Recipe:\nNo path can guide the wicked.")
-        print("\n"+"="*80+"\n")
-        from time import sleep
-        sleep(5)
+            args.outfile.write("\nRecipe:\nNo path can guide the wicked.")
+        args.outfile.write("\n"+"="*80+"\n")
+        if args.outfile == sys.stdout:
+            sleep(5)
 
 
 def extract_ingredient(ing_list):
@@ -186,9 +186,16 @@ def get_average_weight(ing_list, ings):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--clean", action="store_true", default=False)
-    parser.add_argument("-g", "--genre", default="entrees")
-    parser.add_argument("-n", "--normal", action="store_true", default=False)
+    parser.add_argument("-c", "--clean", action="store_true", default=False,
+                        help="Removes any existing refined recipe data.")
+    parser.add_argument("-g", "--genre", default="entrees",
+                        help="Currently only accepts 'drinks' and 'entrees'.")
+    parser.add_argument("-n", "--normal", action="store_true", default=False,
+                        help="Tries to make probable recipes instead of improbable ones.")
+    parser.add_argument("outfile", nargs="?", default=sys.stdout, type=argparse.FileType("w"),
+                        help="File to output recipes to.")
+    parser.add_argument("-N", "--number", type=int, default=10,
+                        help="Number of recipes to generate.")
     args = parser.parse_args()
     if args.clean and os.path.isfile(db_path):
         os.remove(db_path)
