@@ -53,7 +53,7 @@ def setup():
 
     return db
 
-def main():
+def main(args):
     if os.path.isfile(ings_path):
         with open(ings_path, "rb") as ings_file:
             ings = json.loads(ings_file.read())
@@ -68,16 +68,19 @@ def main():
             json.dump(ings, ings_file)
 
 
-    main_ingredients = ["potatoes", "chicken breasts", "chicken thighs", "ground beef", "pork chops",
-                        "uncooked white rice", "basmati rice", "quinoa"]
+    entrees = ["potatoes", "chicken breasts", "chicken thighs",
+               "ground beef", "pork chops", "uncooked white rice",
+               "basmati rice", "quinoa"]
+
+    drinks = ["brandy", "bourbon", "vodka", "gin", "rum"]
+
+    food_type = {"drinks": drinks, "entrees": entrees}
 
     # for i in range(20):
     while True:
-        ing1 = random.choice(main_ingredients)
-
-        # ing1 = "chicken breasts"
+        ing1 = random.choice(food_type[args.genre])
         ing2 = random.choice(ings.keys())
-        recipe = link_ingredients(ing1, ing2, ings)
+        recipe = link_ingredients(ing1, ing2, ings, args)
         print(string.capwords(u"{} with {}\n".format(ing1, ing2)))
         if recipe:
             print(u"Commonness Index: {0:.2f}".format(recipe[0]*1000))
@@ -143,7 +146,7 @@ def n_probable(n, recipe, ings):
         possible_ings.remove(rand_choice)
     return recipe+list(additional_ings)
 
-def link_ingredients(source, end, ings):
+def link_ingredients(source, end, ings, args):
     queue = deque([(source, [])])
     visited = Counter({source: len(ings[source].keys())})
     paths = []
@@ -155,8 +158,8 @@ def link_ingredients(source, end, ings):
         else:
             try:
                 ing_size = len(ings[test_ing].keys())
-                ing_sorted = sorted(ings[test_ing].keys(), key=ings[test_ing].get)
-                possible_ings = ing_sorted[:int(ing_size/8)]
+                ing_sorted = sorted(ings[test_ing].keys(), key=ings[test_ing].get, reverse=args.normal)
+                possible_ings = ing_sorted[:int(ing_size/4)]
                 for ing in possible_ings:
                     if ing == test_ing:
                         continue
@@ -166,7 +169,7 @@ def link_ingredients(source, end, ings):
                 continue
         visited[test_ing] += 1
     if paths != []:
-        return sorted(paths)[0]
+        return sorted(paths, reverse = args.normal)[0]
     else:
         return None
 
@@ -184,6 +187,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--clean", action="store_true", default=False)
+    parser.add_argument("-g", "--genre", default="entrees")
+    parser.add_argument("-n", "--normal", action="store_true", default=False)
     args = parser.parse_args()
     if args.clean and os.path.isfile(db_path):
         os.remove(db_path)
@@ -191,4 +196,4 @@ if __name__ == "__main__":
     if args.clean and os.path.isfile(ings_path):
         os.remove(ings_path)
 
-    main()
+    main(args)
