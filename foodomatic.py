@@ -22,7 +22,6 @@ measure_words = ["gallon", "gal", "quart", "q", "cup", "tablespoon",
                  "jar", "can", "slice", "slices", "tbs.", "pint"]
 
 RE_AMOUNT = re.compile(r"\d+g|([\d\xbc-\xbe/]+ )+"+"s?|([\d\xbc-\xbe]+ )+".join(measure_words), flags=re.I|re.U)
-# RE_INVALID_ING = re.compile("|".join(measure_words), flags=re.I|re.U)
 
 def setup():
     if not os.path.isfile(db_path):
@@ -72,10 +71,8 @@ def main():
     main_ingredients = ["potatoes", "chicken breasts", "chicken thighs", "ground beef", "pork chops",
                         "uncooked white rice", "basmati rice", "quinoa"]
 
-    with open("ing_list", "w") as f:
-        f.write("\n".join(sorted(ings.keys())).encode("utf-8"))
-
-    for i in range(20):
+    # for i in range(20):
+    while True:
         ing1 = random.choice(main_ingredients)
 
         # ing1 = "chicken breasts"
@@ -91,6 +88,8 @@ def main():
         else:
             print("Recipe:\nNo path can guide the wicked.")
         print("\n"+"="*80+"\n")
+        from time import sleep
+        sleep(5)
 
 
 def extract_ingredient(ing_list):
@@ -98,12 +97,10 @@ def extract_ingredient(ing_list):
     for ing in ing_list:
         new_ing = re.sub(RE_AMOUNT, "", ing)
         new_ing = re.sub(r"[:%\d/,()\. -]+", lambda x: " ", new_ing)
-        # new_ing = re.sub(r" +", lambda x: " ", new_ing)
         new_ing = new_ing.strip()
         new_ing = new_ing.lower()
         new_ing_list.append(new_ing)
     return new_ing_list
-    # return [re.sub(RE_AMOUNT, "", ing_str).strip("123/, ().").lower() for ing_str in ing_list]
 
 def count_ingredients(db):
     ing_ctr = Counter()
@@ -154,8 +151,7 @@ def link_ingredients(source, end, ings):
         test_ing, test_path = queue.popleft()
         new_test_path = test_path + [test_ing]
         if test_ing == end:
-            if len(new_test_path) > 3:
-                paths.append((get_average_weight(new_test_path, ings), new_test_path))
+            paths.append((get_average_weight(new_test_path, ings), new_test_path))
         else:
             try:
                 ing_size = len(ings[test_ing].keys())
