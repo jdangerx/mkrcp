@@ -9,7 +9,7 @@ food.
 Usage:
 
 ```
-foodomatic.py [-h] [-c] [-g GENRE] [-n] [-N NUMBER] [outfile]
+python mkrcp.py [-h] [-c] [-g GENRE] [-n] [-N NUMBER] [outfile]
 
 positional arguments:
   outfile               File to output recipes to. If none given, prints to stdout.
