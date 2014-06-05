@@ -91,7 +91,7 @@ def main(args):
                 args.outfile.write("\nUnicode is the way of the devil!")
         else:
             args.outfile.write("\nRecipe:\nNo path can guide the wicked.")
-        args.outfile.write("\n"+"="*80+"\n")
+        args.outfile.write("\n"+"="*80+"\n\n")
         if args.outfile == sys.stdout:
             sleep(5)
 
